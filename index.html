@@ -179,7 +179,7 @@ footer .actions .save{flex:1;width:auto}
 
     <section><span class="label">3. Nguồn tiền</span><div id="srcBox" class="row"></div></section>
     <section><span class="label">4. Danh mục</span><div id="menuBox"><span class="muted">Đang tải danh mục...</span></div></section>
-    <section id="subSec" class="hide"><span class="label">5. Mục con (Menu C)</span><div id="subBox" class="row"></div></section>
+    <section id="subSec" class="hide"><span class="label">5. Gợi ý mục con</span><div id="subBox" class="row"></div><span id="subHint" class="cap"></span></section>
     <section id="peopleSec" class="hide"><span class="label">6. Người liên quan (nếu có)</span><div id="peopleBox" class="row"></div></section>
     <section><label class="label" for="note">7. Ghi chú (nếu có)</label><input id="note" class="field" type="text" autocomplete="off"></section>
     <section class="card">
@@ -261,7 +261,7 @@ footer .actions .save{flex:1;width:auto}
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v32';
+const APP_VERSION = 'v33';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -367,11 +367,18 @@ function renderChoices() {
     `<button type="button" class="tile ${v === state.menu ? 'on' : ''}" data-pick="menu" data-v="${esc(v)}"><i style="background:${DOTS[i % DOTS.length]}"></i>${esc(v)}</button>`).join('')}</div>`
     : '<span class="muted">Chọn nguồn tiền để xem danh mục</span>';
 
+  // Lấy mục con từ sheet Danh mục; đồng thời giữ gợi ý lịch sử như bản người dùng cung cấp.
   const definedSubs = categorySubs();
-  $('subSec').classList.toggle('hide', !definedSubs.length);
-  $('subBox').innerHTML = definedSubs.map(v =>
-    `<button type="button" class="chip ${same(v, state.sub) ? 'on' : ''}" data-pick="sub" data-v="${esc(v)}">${esc(v)}</button>`
-  ).join('');
+  const historicalSubs = historySubs();
+  const sb = uniq(definedSubs.concat(historicalSubs));
+  $('subSec').classList.toggle('hide', !sb.length);
+  $('subBox').innerHTML = sb.map(v => {
+    const fromHistory = historicalSubs.some(h => same(h, v)) && !definedSubs.some(d => same(d, v));
+    return `<button type="button" class="chip ${same(v, state.sub) ? 'on' : ''}" data-pick="sub" data-v="${esc(v)}">${esc(v)}${fromHistory ? ' ↺' : ''}</button>`;
+  }).join('');
+  $('subHint').textContent = historicalSubs.length
+    ? 'Gợi ý có cả mục con trong Danh mục và nội dung từng ghi trong DATA (↺).'
+    : (definedSubs.length ? 'Gợi ý lấy từ sheet Danh mục.' : '');
 
   const showPeople = /vay|nợ/i.test(state.menu) && state.people.length;
   $('peopleSec').classList.toggle('hide', !showPeople);
