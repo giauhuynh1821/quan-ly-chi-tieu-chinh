@@ -261,7 +261,7 @@ footer .actions .save{flex:1;width:auto}
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v35';
+const APP_VERSION = 'v36-demo';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -300,7 +300,37 @@ const state = {
 };
 
 /* ---------- GỌI API ---------- */
+const API_CACHE_PREFIX = 'mini_api_cache_v36:';
+const API_CACHE_TTL = 45 * 1000; // cache 45 giây
+function apiCacheKey(action, payload) {
+  return API_CACHE_PREFIX + action + ':' + JSON.stringify(payload || {});
+}
+function readApiCache(action, payload) {
+  try {
+    const raw = localStorage.getItem(apiCacheKey(action, payload));
+    if (!raw) return null;
+    const item = JSON.parse(raw);
+    if (!item || Date.now() - item.time > API_CACHE_TTL) return null;
+    return item.data;
+  } catch (e) { return null; }
+}
+function writeApiCache(action, payload, data) {
+  try {
+    localStorage.setItem(apiCacheKey(action, payload), JSON.stringify({ time: Date.now(), data }));
+  } catch (e) {}
+}
+function clearApiCache() {
+  try {
+    Object.keys(localStorage).filter(k => k.startsWith(API_CACHE_PREFIX)).forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+}
+
 async function api(action, payload) {
+  const cacheable = ['day', 'month', 'breakdown', 'credit'].includes(action);
+  if (cacheable) {
+    const cached = readApiCache(action, payload);
+    if (cached) return cached;
+  }
   const fail = (msg) => { const er = new Error(msg); er.net = true; $('appVer').textContent = 'Mini App ' + APP_VERSION + ' · không gọi được API'; return er; };  // lỗi cấu hình/mạng: giữ lại để gửi sau
   if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(API_URL)) {
     throw fail('API_URL trong file config.js chưa đúng (phải dạng https://script.google.com/macros/s/.../exec)');
@@ -321,6 +351,8 @@ async function api(action, payload) {
   }
   showVer(data.v);
   if (!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+  if (cacheable) writeApiCache(action, payload, data);
+  if (action === 'add') clearApiCache();
   return data;
 }
 
@@ -490,6 +522,7 @@ async function syncQueue() {
       const item = getQ()[0];
       try {
         await api('add', item);
+        clearApiCache();
         savedAny = true;
         const q = getQ(); q.shift(); setQ(q);
       } catch (err) {
