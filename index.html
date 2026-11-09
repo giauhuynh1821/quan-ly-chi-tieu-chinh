@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sổ chi tiêu</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5F9; --card:#FFFFFF; --ink:#172033; --muted:#667085; --line:#D5DAE3; --seg:#E4E8F0;
+  --chi:#c62828; --thu:#2e7d32; --on-accent:#FFFFFF; --danger:#B42318;
+}
+:root[data-theme="dark"]{
+  --bg:#0F141C; --card:#1A222E; --ink:#E8ECF3; --muted:#9AA4B5; --line:#2E3849; --seg:#232C3A;
+  --chi:#EF5350; --thu:#66BB6A; --on-accent:#10161F; --danger:#F97066;
+}
+:root[data-type="chi"]{--accent:var(--chi)}
+:root[data-type="thu"]{--accent:var(--thu)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Be Vietnam Pro',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+button,input{font-family:inherit;color:inherit}
+#app{max-width:480px;margin:0 auto;padding:16px 16px 120px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{margin:0;font-size:22px;font-weight:700}
+.pill{height:36px;padding:0 14px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:500}
+input[type=date].pill,input[type=month].pill{width:auto}
+.seg{display:flex;padding:4px;background:var(--seg);border-radius:16px;gap:4px;margin-bottom:16px}
+.seg button{flex:1;height:44px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:15px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+.seg.tabs button.on,.seg.plain button.on{background:var(--card);color:var(--ink)}
+section{margin-bottom:16px}
+.label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.card{background:var(--card);border-radius:20px;padding:18px 20px}
+.money{display:flex;align-items:baseline;gap:8px}
+.money input{flex:1;min-width:0;border:0;background:transparent;font-size:44px;font-weight:700;color:var(--accent);padding:0;outline:none}
+.money span{font-size:24px;font-weight:600;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--card);font-size:14px;font-weight:500;cursor:pointer}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{min-height:68px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:500;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;text-align:left;cursor:pointer}
+.tile i{width:8px;height:8px;border-radius:4px;display:block}
+.tile.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.field{width:100%;height:52px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:0 16px;font-size:15px;outline:none}
+footer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+footer .in{max-width:480px;margin:0 auto}
+.save{width:100%;height:56px;border:0;border-radius:16px;background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:700;cursor:pointer}
+.save:disabled{opacity:.6}
+.sum{display:flex;gap:12px;margin-bottom:16px}
+.sum .card{flex:1;padding:14px 16px}
+.sum b{display:block;font-size:20px;margin-top:4px}
+.item{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item small{display:block;color:var(--muted);margin-top:2px;font-size:13px}
+.amt{font-weight:700;white-space:nowrap}
+.muted{color:var(--muted);font-size:14px}
+.err{color:var(--danger);font-size:14px}
+#toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;z-index:10}
+#toast.show{opacity:1}
+.pendingbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 14px;margin-bottom:16px;font-size:13px;color:var(--muted)}
+.pendingbar button{height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:500;cursor:pointer}
+.appver{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-size:12px;text-align:left;color:var(--muted);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px 6px;border-bottom:1px solid var(--line)}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums}
+.tbl .z{color:var(--muted)}
+.tbl .c-chi{color:var(--chi);font-weight:600}
+.tbl .c-thu{color:var(--thu);font-weight:600}
+.tbl tr.today td{background:var(--seg)}
+.tbl tr.total td{font-weight:700;border-bottom:0;background:var(--seg)}
+.tbl tbody tr[data-pick]{cursor:pointer}
+.card.tight{padding:8px 14px}
+.seg.tabs{overflow:hidden}
+.seg.tabs button{flex:1 1 0;min-width:0;padding:0 2px;font-size:13px;white-space:nowrap}
+.seg.small button{height:36px;font-size:13px;border-radius:10px}
+.band{background:var(--card);border-radius:20px;padding:14px 18px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
+.band .bal{display:flex;align-items:baseline;gap:10px}
+.band .bl{font-size:14px;font-weight:500;color:var(--muted)}
+.band .bn{font-size:28px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.band .tc{display:flex;gap:22px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.band .tc i{font-style:normal;font-size:10px;margin-right:6px}
+.band .in{color:var(--thu)}
+.band .out{color:var(--chi)}
+.sum.three b{font-size:15px}
+.cap{display:block;font-size:11px;line-height:1.35;color:var(--muted);margin-top:2px}
+.sum .mv{display:flex;align-items:baseline;gap:6px}
+.sum .mv i{font-style:normal;font-size:12px}
+.sum .mv b{font-size:22px;margin-top:0}
+#crSt,#crDue{font-size:18px}
+.nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.nav button{width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--card);font-size:20px;cursor:pointer}
+.nav span{font-weight:600;font-size:15px}
+.lrow{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:14px 16px;margin-bottom:8px}
+.ldot{width:12px;height:12px;border-radius:6px;flex:none}
+.ln{flex:1;min-width:0;font-weight:500}
+.lp{color:var(--muted);font-size:13px;width:44px;text-align:right}
+.la{font-weight:700;white-space:nowrap}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Sổ chi tiêu</h1>
+  </header>
+
+  <div id="balBand" class="band hide" role="status"></div>
+
+  <div id="pendingBar" class="pendingbar hide" role="status"></div>
+
+  <div class="seg tabs" role="group" aria-label="Chuyển tab">
+    <button type="button" class="on" data-tab="form">Ghi chép</button>
+    <button type="button" data-tab="lookup">Tra cứu</button>
+    <button type="button" data-tab="month">Tháng</button>
+    <button type="button" data-tab="chart">Biểu đồ</button>
+    <button type="button" data-tab="credit">Tín dụng</button>
+  </div>
+
+  <!-- TAB GHI CHÉP -->
+  <div id="view-form">
+    <section>
+      <label class="label" for="date">1. Ngày giao dịch</label>
+      <input id="date" class="field" type="date" aria-label="Ngày giao dịch">
+    </section>
+    <div class="seg" role="group" aria-label="Loại giao dịch">
+      <span class="label" style="display:none">2. Loại giao dịch</span>
+      <button type="button" data-pick="type" data-v="Chi" class="on">Chi</button>
+      <button type="button" data-pick="type" data-v="Thu">Thu</button>
+    </div>
+
+    <section><span class="label">3. Nguồn tiền</span><div id="srcBox" class="row"></div></section>
+    <section><span class="label">4. Danh mục</span><div id="menuBox"><span class="muted">Đang tải danh mục...</span></div></section>
+    <section id="subSec" class="hide"><span class="label">5. Gợi ý mục con</span><div id="subBox" class="row"></div><span id="subHint" class="cap"></span></section>
+    <section id="peopleSec" class="hide"><span class="label">6. Người liên quan (nếu có)</span><div id="peopleBox" class="row"></div></section>
+    <section><label class="label" for="note">7. Ghi chú (nếu có)</label><input id="note" class="field" type="text" autocomplete="off"></section>
+    <section class="card">
+      <label class="label" for="money">8. Số tiền · nhập cuối cùng</label>
+      <div class="money"><input id="money" type="text" inputmode="numeric" placeholder="0" autocomplete="off"><span>đ</span></div>
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="chip" data-pick="quick" data-v="10000">+10.000</button>
+        <button type="button" class="chip" data-pick="quick" data-v="50000">+50.000</button>
+        <button type="button" class="chip" data-pick="quick" data-v="100000">+100.000</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- TAB TRA CỨU -->
+  <div id="view-lookup" class="hide">
+    <section>
+      <label class="label" for="lookupDate">Ngày tra cứu</label>
+      <input id="lookupDate" class="field" type="date" aria-label="Ngày tra cứu">
+    </section>
+    <div class="sum">
+      <div class="card"><div class="mv" role="group" aria-label="Chi" style="color:var(--chi)"><i aria-hidden="true">▼</i><b id="sumChi">0đ</b></div><span class="cap" id="cntChi"></span></div>
+      <div class="card"><div class="mv" role="group" aria-label="Thu" style="color:var(--thu)"><i aria-hidden="true">▲</i><b id="sumThu">0đ</b></div><span class="cap" id="cntThu"></span></div>
+    </div>
+    <div class="card" id="dayList"><span class="muted">Đang tải...</span></div>
+  </div>
+
+  <!-- TAB THÁNG -->
+  <div id="view-month" class="hide">
+    <div style="margin-bottom:12px"><input id="monthPick" class="pill" type="month" aria-label="Chọn tháng"></div>
+    <div class="sum three">
+      <div class="card"><span class="label" style="margin:0">Chi</span><b id="sumMChi" style="color:var(--chi)">0đ</b></div>
+      <div class="card"><span class="label" style="margin:0">Thu</span><b id="sumMThu" style="color:var(--thu)">0đ</b></div>
+      <div class="card"><span class="label" style="margin:0">Còn lại</span><b id="sumMBal">0đ</b></div>
+    </div>
+    <span class="label">Thu chi theo ngày · bấm một ngày để xem chi tiết</span>
+    <div class="card tight" id="monthTable"><span class="muted">Đang tải...</span></div>
+  </div>
+
+  <!-- TAB BIỂU ĐỒ -->
+  <div id="view-chart" class="hide">
+    <div class="seg plain" role="group" aria-label="Loại">
+      <button type="button" class="on" data-pick="ctype" data-v="chi">Chi phí</button>
+      <button type="button" data-pick="ctype" data-v="thu">Thu nhập</button>
+    </div>
+    <div class="seg plain small" role="group" aria-label="Khoảng thời gian">
+      <button type="button" data-pick="cperiod" data-v="day">Ngày</button>
+      <button type="button" data-pick="cperiod" data-v="week">Tuần</button>
+      <button type="button" class="on" data-pick="cperiod" data-v="month">Tháng</button>
+      <button type="button" data-pick="cperiod" data-v="year">Năm</button>
+    </div>
+    <div class="nav">
+      <button type="button" data-pick="cshift" data-v="-1" aria-label="Kỳ trước">‹</button>
+      <span id="chartLabel"></span>
+      <button type="button" data-pick="cshift" data-v="1" aria-label="Kỳ sau">›</button>
+    </div>
+    <div class="card" id="chartCard" style="margin-bottom:12px"><span class="muted">Đang tải...</span></div>
+    <div id="chartList"></div>
+  </div>
+
+  <!-- TAB TÍN DỤNG -->
+  <div id="view-credit" class="hide">
+    <div class="sum">
+      <div class="card"><span class="label" style="margin:0 0 4px">Ngày sao kê</span><b id="crSt">–</b><span class="cap" id="crStSub"></span></div>
+      <div class="card"><span class="label" style="margin:0 0 4px">Ngày cần thanh toán</span><b id="crDue">–</b><span class="cap" id="crDueSub"></span></div>
+    </div>
+    <div class="card" id="crCycle" style="margin-bottom:16px"><span class="muted">Đang tải...</span></div>
+    <div style="margin-bottom:12px"><input id="creditMonth" class="pill" type="month" aria-label="Chọn tháng"></div>
+    <span class="label">Giao dịch tín dụng trong tháng</span>
+    <div class="card tight" id="crList"></div>
+  </div>
+
+  <div id="appVer" class="appver"></div>
+</div>
+
+<footer id="saveBar"><div class="in"><button id="saveBtn" class="save" type="button">Lưu giao dịch</button></div></footer>
+<div id="toast" role="status"></div>
+
+<script>
+/* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
+const APP_VERSION = 'v18';
+const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
+const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
+const TZ = 'Asia/Ho_Chi_Minh';
+const DOTS = ['#C2410C','#0369A1','#7C3AED','#0F766E','#B45309','#BE185D','#4D7C0F','#475467'];
+
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const root = document.documentElement;
+const dark = tg ? tg.colorScheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+if (dark) root.dataset.theme = 'dark';
+
+const $ = id => document.getElementById(id);
+$('appVer').textContent = 'Mini App ' + APP_VERSION + ' · API đang kết nối…';
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, SEP);
+const moneyNumber = v => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const n = Number(String(v ?? '').trim().replace(/[^\d-]/g, ''));
+  return Number.isFinite(n) ? n : 0;
+};
+const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+const uniq = a => a.filter((v, i) => a.indexOf(v) === i);
+
+const state = {
+  type: 'Chi', source: '', menu: '', sub: '', person: '', amount: 0, date: todayStr(),
+  categories: [], people: [], history: [], loaded: false,
+};
+
+/* ---------- GỌI API ---------- */
+async function api(action, payload) {
+  const fail = (msg) => { const er = new Error(msg); er.net = true; $('appVer').textContent = 'Mini App ' + APP_VERSION + ' · không gọi được API'; return er; };  // lỗi cấu hình/mạng: giữ lại để gửi sau
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(API_URL)) {
+    throw fail('API_URL trong file config.js chưa đúng (phải dạng https://script.google.com/macros/s/.../exec)');
+  }
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // tránh lỗi CORS preflight
+      body: JSON.stringify(Object.assign({ action, initData: tg ? tg.initData : '' }, payload || {})),
+    });
+  } catch (e) {
+    throw fail('Không kết nối được máy chủ (kiểm tra mạng và API_URL)');
+  }
+  let data;
+  try { data = await res.json(); } catch (e) {
+    throw fail('Máy chủ không trả về dữ liệu hợp lệ. Kiểm tra Web App đã triển khai với quyền "Bất kỳ ai" và dùng bản triển khai mới nhất');
+  }
+  showVer(data.v);
+  if (!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+  return data;
+}
+
+// Hiện cạnh tiêu đề: bản app · bản API đang trả lời · đuôi link API (để đối chiếu với ID bản triển khai)
+function showVer(apiV) {
+  const tail = API_URL.replace(/\/exec$/, '').slice(-6);
+  // Chỉ hiện số phiên bản app; thông tin API chỉ xem khi rê chuột/nhấn giữ
+  $('appVer').textContent = 'Mini App ' + APP_VERSION + ' · ' + (apiV || 'API cũ (chưa có số phiên bản)');
+  $('appVer').title = 'Đuôi link API: …' + tail;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function haptic(kind) { if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(kind); }
+
+/* ---------- LỌC DANH MỤC PHỤ THUỘC ---------- */
+function rows() {
+  const byType = state.categories.filter(r => !r.type || r.type.toLowerCase() === state.type.toLowerCase());
+  return byType.length ? byType : state.categories;   // nếu sheet Danh mục không chia theo Chi/Thu
+}
+const normKey = v => String(v || '').trim().toLocaleLowerCase('vi');
+const same = (a, b) => normKey(a) === normKey(b);
+const sources = () => uniq(rows().map(r => r.source).filter(Boolean));
+const menus = () => uniq(rows().filter(r => same(r.source, state.source)).map(r => r.menu).filter(Boolean));
+const categorySubs = () => uniq(rows().filter(r => same(r.source, state.source) && same(r.menu, state.menu)).map(r => r.sub).filter(Boolean));
+const historyGroup = () => (state.history || []).find(g =>
+  same(g.type, state.type) && same(g.source, state.source) && same(g.menu, state.menu));
+const historySubs = () => {
+  const g = historyGroup();
+  return g ? (g.items || []).map(x => x.value).filter(Boolean) : [];
+};
+const subs = () => uniq(categorySubs().concat(historySubs()));
+
+function fixSelection() {
+  const s = sources();
+  if (!s.some(v => same(v, state.source))) state.source = s.find(v => same(v, 'Mặc định')) || (s[0] || '');
+  if (!menus().some(v => same(v, state.menu))) state.menu = '';
+  if (!subs().some(v => same(v, state.sub))) state.sub = '';
+  if (state.menu && !historyGroup()) state.person = '';
+}
+
+/* ---------- VẼ CÁC NHÓM LỰA CHỌN ---------- */
+function renderChoices() {
+  $('srcBox').innerHTML = sources().map(v =>
+    `<button type="button" class="chip ${v === state.source ? 'on' : ''}" data-pick="source" data-v="${esc(v)}">${esc(v)}</button>`).join('')
+    || '<span class="muted">Chưa có nguồn tiền</span>';
+
+  const m = menus();
+  $('menuBox').innerHTML = m.length ? `<div class="grid">${m.map((v, i) =>
+    `<button type="button" class="tile ${v === state.menu ? 'on' : ''}" data-pick="menu" data-v="${esc(v)}"><i style="background:${DOTS[i % DOTS.length]}"></i>${esc(v)}</button>`).join('')}</div>`
+    : '<span class="muted">Chọn nguồn tiền để xem danh mục</span>';
+
+  const definedSubs = categorySubs();
+  const historicalSubs = historySubs();
+  const sb = uniq(definedSubs.concat(historicalSubs));
+  $('subSec').classList.toggle('hide', !sb.length);
+  $('subBox').innerHTML = sb.map(v => {
+    const fromHistory = historicalSubs.some(h => same(h, v)) && !definedSubs.some(d => same(d, v));
+    return `<button type="button" class="chip ${same(v, state.sub) ? 'on' : ''}" data-pick="sub" data-v="${esc(v)}">${esc(v)}${fromHistory ? ' ↺' : ''}</button>`;
+  }).join('');
+  $('subHint').textContent = historicalSubs.length
+    ? 'Gợi ý có cả mục con trong Danh mục và nội dung từng ghi trong DATA (↺).'
+    : (definedSubs.length ? 'Gợi ý lấy từ sheet Danh mục.' : '');
+
+  const showPeople = /vay|nợ/i.test(state.menu) && state.people.length;
+  $('peopleSec').classList.toggle('hide', !showPeople);
+  $('peopleBox').innerHTML = showPeople ? state.people.map(v =>
+    `<button type="button" class="chip ${same(v, state.person) ? 'on' : ''}" data-pick="person" data-v="${esc(v)}">${esc(v)}</button>`).join('') : '';
+}
+
+function syncType() {
+  root.dataset.type = state.type.toLowerCase();
+  document.querySelectorAll('[data-pick="type"]').forEach(b => b.classList.toggle('on', b.dataset.v === state.type));
+}
+
+/* ---------- SỰ KIỆN ---------- */
+document.addEventListener('click', e => {
+  const tab = e.target.closest('[data-tab]');
+  if (tab) return showTab(tab.dataset.tab);
+  const b = e.target.closest('[data-pick]');
+  if (!b) return;
+  const k = b.dataset.pick, v = b.dataset.v;
+  if (k === 'type') { state.type = v; state.menu = ''; state.sub = ''; state.person = ''; fixSelection(); syncType(); renderChoices(); }
+  else if (k === 'source') { state.source = v; state.menu = ''; state.sub = ''; state.person = ''; renderChoices(); }
+  else if (k === 'menu') { state.menu = v; state.sub = ''; state.person = ''; renderChoices(); }
+  else if (k === 'sub') { state.sub = same(state.sub, v) ? '' : v; renderChoices(); }
+  else if (k === 'person') { state.person = same(state.person, v) ? '' : v; renderChoices(); }
+  else if (k === 'quick') { setAmount(state.amount + Number(v)); }
+  else if (k === 'retry') { syncQueue(); }
+  else if (k === 'ctype') { chart.type = v; loadChart(); }
+  else if (k === 'cperiod') { chart.period = v; loadChart(); }
+  else if (k === 'cshift') { shiftChart(Number(v)); }
+  else if (k === 'gotoday') { state.date = v; $('date').value = v; showTab('lookup'); }
+});
+
+function setAmount(n) { state.amount = n; $('money').value = n ? fmt(n) : ''; }
+$('money').addEventListener('input', e => setAmount(Number(e.target.value.replace(/\D/g, '')) || 0));
+$('date').addEventListener('change', e => { state.date = e.target.value || todayStr(); loadDay(); });
+$('date').value = state.date;
+$('lookupDate').value = state.date;
+$('lookupDate').addEventListener('change', e => { state.date = e.target.value || todayStr(); $('date').value = state.date; loadDay(); });
+
+function showTab(name) {
+  ['form', 'lookup', 'month', 'chart', 'credit'].forEach(v => $('view-' + v).classList.toggle('hide', v !== name));
+  $('saveBar').classList.toggle('hide', name !== 'form');
+  if (name === 'lookup') $('lookupDate').value = state.date;
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  if (name === 'lookup') loadDay();
+  if (name === 'month') loadMonth();
+  if (name === 'chart') loadChart();
+  if (name === 'credit') loadCredit();
+}
+
+/* ---------- LƯU GIAO DỊCH: ghi trước, đồng bộ sau ---------- */
+const QKEY = 'pending_v1';
+const getQ = () => { try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch (e) { return []; } };
+const setQ = q => { try { localStorage.setItem(QKEY, JSON.stringify(q)); } catch (e) {} renderPending(); };
+const newCid = () => Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(16).padStart(2, '0')).join('');
+let syncing = false;
+
+function renderPending() {
+  const n = getQ().length;
+  const bar = $('pendingBar');
+  bar.classList.toggle('hide', n === 0);
+  bar.innerHTML = n ? `<span>${syncing ? '⏳ Đang đồng bộ' : '⚠️ Chưa đồng bộ'} ${n} giao dịch</span>` +
+    (syncing ? '' : '<button type="button" data-pick="retry">Thử lại</button>') : '';
+}
+
+async function syncQueue() {
+  if (syncing) return;
+  let savedAny = false;
+  syncing = true; renderPending();
+  try {
+    while (getQ().length) {
+      const item = getQ()[0];
+      try {
+        await api('add', item);
+        savedAny = true;
+        const q = getQ(); q.shift(); setQ(q);
+      } catch (err) {
+        if (err.net) break;                       // mất mạng: giữ lại, thử lại sau
+        const q = getQ(); q.shift(); setQ(q);     // máy chủ từ chối: báo lý do rồi bỏ khỏi hàng chờ
+        haptic('error');
+        toast('Không lưu được ' + fmt(item.money) + 'đ: ' + err.message);
+      }
+    }
+  } finally {
+    syncing = false; renderPending();
+    if (savedAny && !getQ().length) {
+      try { const m = await api('meta'); applyMeta(m); localStorage.setItem('meta_v3', JSON.stringify(m)); } catch (e) {}
+    }
+    // Làm mới các tab đang mở và số dư sau khi máy chủ đã xác nhận giao dịch.
+    if (savedAny) {
+      toast('Đã đồng bộ giao dịch lên Google Sheets');
+      refreshActive();
+    } else if (!getQ().length) {
+      refreshActive();
+    }
+  }
+}
+
+$('saveBtn').addEventListener('click', () => {
+  if (!state.amount) return toast('Nhập số tiền trước nhé');
+  if (!state.source) return toast('Chọn nguồn tiền');
+  if (!state.menu) return toast('Chọn danh mục');
+  const item = {
+    cid: newCid(), type: state.type, date: state.date, source: state.source, menu: state.menu,
+    sub: state.sub, note: $('note').value, person: state.person, money: state.amount,
+  };
+  const q = getQ(); q.push(item); setQ(q);          // lưu vào máy trước, không mất dù đóng app
+
+  // Cập nhật số dư ngay trên giao diện (optimistic UI) nếu giao dịch thuộc tháng hiện tại.
+  // Sau khi máy chủ lưu xong, refreshActive() sẽ lấy lại số liệu chuẩn từ Google Sheets.
+  try {
+    const currentMonth = todayStr().slice(0, 7);
+    if (item.date.slice(0, 7) === currentMonth) {
+      const cached = JSON.parse(localStorage.getItem('bal_v1') || 'null');
+      if (cached && cached.y + '-' + String(cached.m).padStart(2, '0') === currentMonth) {
+        if (String(item.type).toLowerCase() === 'thu') cached.thu = Number(cached.thu || 0) + Number(item.money);
+        else cached.chi = Number(cached.chi || 0) + Number(item.money);
+        localStorage.setItem('bal_v1', JSON.stringify(cached));
+        renderBalance(cached);
+      }
+    }
+  } catch (e) {}
+
+  haptic('success');
+  toast('Đã ghi ' + fmt(item.money) + 'đ · đang đồng bộ');
+  setAmount(0); $('note').value = ''; state.menu = ''; state.sub = ''; state.person = ''; renderChoices();
+  syncQueue();                                       // gửi lên sheet chạy ngầm
+});
+
+window.addEventListener('online', syncQueue);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncQueue(); });
+
+/* ---------- TRA CỨU THEO NGÀY ---------- */
+async function loadDay() {
+  $('dayList').innerHTML = '<span class="muted">Đang tải...</span>';
+  try {
+    const d = await api('day', { date: state.date });
+    const totalChi = moneyNumber(d.totalChi);
+    const totalThu = moneyNumber(d.totalThu);
+    $('sumChi').textContent = fmt(totalChi) + 'đ'; $('cntChi').textContent = d.countChi + ' giao dịch';
+    $('sumThu').textContent = fmt(totalThu) + 'đ'; $('cntThu').textContent = d.countThu + ' giao dịch';
+    $('dayList').innerHTML = d.items.length ? d.items.map(it => {
+      const amount = moneyNumber(it.money);
+      return `
+      <div class="item">
+        <div><div>${esc(it.menu)}${it.sub ? ' · ' + esc(it.sub) : ''}</div>
+        <small>${esc(it.source)}${it.person ? ' · ' + esc(it.person) : ''}${it.note ? ' · ' + esc(it.note) : ''}</small></div>
+        <div class="amt" style="color:var(--${it.type === 'Thu' ? 'thu' : 'chi'})">${it.type === 'Thu' ? '+' : '-'}${fmt(amount)}đ</div>
+      </div>`;
+    }).join('') : '<span class="muted">Ngày này chưa có giao dịch nào.' + latestNote(d.lastDate) + '</span>';
+  } catch (err) {
+    $('dayList').innerHTML = '<span class="err">Lỗi: ' + esc(err.message) + '</span>';
+  }
+}
+
+/* ---------- TAB THÁNG ---------- */
+let monthVal = todayStr().slice(0, 7);
+$('monthPick').value = monthVal;
+$('monthPick').addEventListener('change', e => { monthVal = e.target.value || monthVal; loadMonth(); });
+
+async function loadMonth() {
+  $('monthTable').innerHTML = '<span class="muted">Đang tải...</span>';
+  try {
+    const [y, m] = monthVal.split('-').map(Number);
+    const d = await api('month', { year: y, month: m });
+    $('sumMChi').textContent = fmt(d.totalChi) + 'đ';
+    $('sumMThu').textContent = fmt(d.totalThu) + 'đ';
+    const bal = d.totalThu - d.totalChi;
+    $('sumMBal').textContent = (bal < 0 ? '-' : '') + fmt(Math.abs(bal)) + 'đ';
+    const today = todayStr();
+    const mm = String(d.month).padStart(2, '0');
+    const val = (n, cls) => `<td class="r ${n ? cls : 'z'}">${fmt(n)}</td>`;
+    const body = d.days.map(x => {
+      const key = d.year + '-' + mm + '-' + String(x.d).padStart(2, '0');
+      return `<tr data-pick="gotoday" data-v="${key}" class="${key === today ? 'today' : ''}"><td>${x.d}</td>${val(x.chi, 'c-chi')}${val(x.thu, 'c-thu')}</tr>`;
+    }).join('');
+    const emptyNote = (d.totalChi === 0 && d.totalThu === 0)
+      ? `<p class="cap" style="margin:6px 4px 10px">Chưa có giao dịch nào trong tháng ${d.month}/${d.year}.${latestNote(d.lastDate)}</p>` : '';
+    $('monthTable').innerHTML = emptyNote + `<table class="tbl"><thead><tr><th>Ngày</th><th class="r">Chi</th><th class="r">Thu</th></tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot><tr class="total"><td>Tổng</td><td class="r c-chi">${fmt(d.totalChi)}</td><td class="r c-thu">${fmt(d.totalThu)}</td></tr></tfoot></table>`;
+  } catch (err) {
+    $('monthTable').innerHTML = '<span class="err">Lỗi: ' + esc(err.message) + '</span>';
+  }
+}
+
+/* ---------- SỐ DƯ CÒN LẠI CỦA THÁNG (đầu trang) ---------- */
+function renderBalance(b) {
+  const bal = b.thu - b.chi;
+  const el = $('balBand');
+  el.classList.remove('hide');
+  el.innerHTML = `<div class="bal"><span class="bl">Còn lại</span><b class="bn">${bal < 0 ? '-' : ''}${fmt(Math.abs(bal))}đ</b></div>` +
+    `<div class="tc"><span class="in" title="Thu" aria-label="Thu ${fmt(b.thu)} đồng"><i aria-hidden="true">▲</i>${fmt(b.thu)}đ</span>` +
+    `<span class="out" title="Chi" aria-label="Chi ${fmt(b.chi)} đồng"><i aria-hidden="true">▼</i>${fmt(b.chi)}đ</span></div>`;
+}
+let balanceRequestId = 0;
+async function loadBalance() {
+  const requestId = ++balanceRequestId;
+  const [y, m] = todayStr().slice(0, 7).split('-').map(Number);
+  try {
+    const d = await api('month', { year: y, month: m });
+    if (requestId !== balanceRequestId) return;
+    const b = { y, m, chi: moneyNumber(d.totalChi), thu: moneyNumber(d.totalThu) };
+    try { localStorage.setItem('bal_v1', JSON.stringify(b)); } catch (e) {}
+    renderBalance(b);
+  } catch (err) { /* giữ số cũ nếu lỗi mạng */ }
+}
+function refreshActive() {
+  const vis = n => !$('view-' + n).classList.contains('hide');
+  if (vis('lookup')) loadDay();
+  if (vis('month')) loadMonth();
+  if (vis('chart')) loadChart();
+  if (vis('credit')) loadCredit();
+  loadBalance();
+}
+
+/* ---------- TAB BIỂU ĐỒ TRÒN ---------- */
+const PALETTE = ['#C2410C', '#0369A1', '#7C3AED', '#0F766E', '#B45309', '#BE185D', '#4D7C0F', '#475467'];
+const chart = { type: 'chi', period: 'month', ref: todayStr() };
+const pad2 = n => String(n).padStart(2, '0');
+const toUTC = k => { const [y, m, d] = k.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const dkey = dt => dt.getUTCFullYear() + '-' + pad2(dt.getUTCMonth() + 1) + '-' + pad2(dt.getUTCDate());
+const addDays = (k, n) => dkey(new Date(toUTC(k).getTime() + n * 864e5));
+const fmtDM = k => k.slice(8, 10) + '/' + k.slice(5, 7);
+const latestNote = k => k ? ' Giao dịch mới nhất trong sheet: ' + k.slice(8, 10) + '/' + k.slice(5, 7) + '/' + k.slice(0, 4) + '.' : '';
+const fmtDMY = k => k.slice(8, 10) + '/' + k.slice(5, 7) + '/' + k.slice(0, 4);
+
+function chartRange() {
+  const [y, m] = chart.ref.split('-').map(Number);
+  if (chart.period === 'day') return { from: chart.ref, to: chart.ref };
+  if (chart.period === 'week') {
+    const dow = (toUTC(chart.ref).getUTCDay() + 6) % 7;      // tuần bắt đầu từ thứ Hai
+    const from = addDays(chart.ref, -dow);
+    return { from, to: addDays(from, 6) };
+  }
+  if (chart.period === 'month') {
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    return { from: `${y}-${pad2(m)}-01`, to: `${y}-${pad2(m)}-${pad2(last)}` };
+  }
+  return { from: `${y}-01-01`, to: `${y}-12-31` };
+}
+function chartLabel(r) {
+  const [y, m] = chart.ref.split('-').map(Number);
+  if (chart.period === 'day') return (chart.ref === todayStr() ? 'Hôm nay · ' : '') + fmtDM(chart.ref) + '/' + y;
+  if (chart.period === 'week') return fmtDM(r.from) + ' – ' + fmtDM(r.to);
+  if (chart.period === 'month') return 'Tháng ' + m + '/' + y;
+  return 'Năm ' + y;
+}
+function shiftChart(dir) {
+  const [y, m] = chart.ref.split('-').map(Number);
+  if (chart.period === 'day') chart.ref = addDays(chart.ref, dir);
+  else if (chart.period === 'week') chart.ref = addDays(chart.ref, 7 * dir);
+  else if (chart.period === 'month') chart.ref = dkey(new Date(Date.UTC(y, m - 1 + dir, 1)));
+  else chart.ref = `${y + dir}-01-01`;
+  loadChart();
+}
+
+function donutSvg(groups, total) {
+  const R = 70, C = 2 * Math.PI * R, gap = groups.length > 1 ? 2 : 0;
+  let off = 0;
+  const arcs = groups.map((g, i) => {
+    const part = g.total / total * C;
+    const len = Math.max(0, part - gap);
+    const a = `<circle cx="100" cy="100" r="${R}" fill="none" stroke="${PALETTE[i % PALETTE.length]}" stroke-width="28" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 100 100)"/>`;
+    off += part;
+    return a;
+  }).join('');
+  const txt = fmt(total) + 'đ';
+  return `<svg viewBox="0 0 200 200" role="img" aria-label="Biểu đồ tròn theo danh mục" style="width:100%;max-width:260px;display:block;margin:0 auto">
+    <circle cx="100" cy="100" r="${R}" fill="none" stroke="var(--seg)" stroke-width="28"/>${arcs}
+    <text x="100" y="94" text-anchor="middle" font-size="11" fill="var(--muted)">Tổng</text>
+    <text x="100" y="114" text-anchor="middle" font-size="${txt.length > 10 ? 13 : 16}" font-weight="700" fill="var(--ink)">${txt}</text></svg>`;
+}
+
+let chartRequestId = 0;
+async function loadChart() {
+  const requestId = ++chartRequestId;
+  const r = chartRange();
+  document.querySelectorAll('[data-pick="ctype"]').forEach(b => b.classList.toggle('on', b.dataset.v === chart.type));
+  document.querySelectorAll('[data-pick="cperiod"]').forEach(b => b.classList.toggle('on', b.dataset.v === chart.period));
+  $('chartLabel').textContent = chartLabel(r);
+  $('chartCard').innerHTML = '<span class="muted">Đang tải...</span>';
+  $('chartList').innerHTML = '';
+  try {
+    const d = await api('breakdown', { from: r.from, to: r.to, type: chart.type });
+    // Nếu người dùng đổi kỳ trong lúc API đang trả lời, bỏ qua phản hồi cũ.
+    if (requestId !== chartRequestId) return;
+
+    const total = moneyNumber(d.total);
+    if (!Array.isArray(d.groups)) throw new Error('API không trả về danh sách danh mục cho biểu đồ.');
+    let groups = d.groups.map(g => ({
+      name: String(g.name || '(trống)'),
+      total: moneyNumber(g.total),
+      count: moneyNumber(g.count)
+    })).filter(g => g.total > 0).sort((a, b) => b.total - a.total);
+
+    if (!(total > 0) || !groups.length) {
+      $('chartCard').innerHTML = '<span class="muted">Chưa có ' + (chart.type === 'thu' ? 'khoản thu' : 'khoản chi') + ' nào trong khoảng ' + r.from + ' đến ' + r.to + '.</span>';
+      return;
+    }
+
+    // Chuẩn hóa tổng theo chính các nhóm được API trả về để phần trăm và biểu đồ khớp nhau.
+    const chartTotal = groups.reduce((sum, g) => sum + g.total, 0);
+    if (!(chartTotal > 0)) throw new Error('Tổng tiền các danh mục bằng 0 hoặc không hợp lệ.');
+
+    if (groups.length > PALETTE.length) {
+      const head = groups.slice(0, PALETTE.length - 1);
+      const tail = groups.slice(PALETTE.length - 1);
+      groups = head.concat([{
+        name: 'Khác (' + tail.length + ' mục)',
+        total: tail.reduce((sum, g) => sum + g.total, 0),
+        count: tail.reduce((sum, g) => sum + g.count, 0)
+      }]);
+    }
+
+    $('chartCard').innerHTML = donutSvg(groups, chartTotal);
+    $('chartList').innerHTML = groups.map((g, i) =>
+      `<div class="lrow"><i class="ldot" style="background:${PALETTE[i % PALETTE.length]}"></i><span class="ln">${esc(g.name)}<small class="cap">${g.count} giao dịch</small></span><span class="lp">${Math.round(g.total / chartTotal * 100)}%</span><span class="la">${fmt(g.total)}đ</span></div>`).join('');
+  } catch (err) {
+    if (requestId !== chartRequestId) return;
+    $('chartCard').innerHTML = '<span class="err">Lỗi tải biểu đồ: ' + esc(err.message) + '</span>';
+  }
+}
+
+/* ---------- TAB TÍN DỤNG ---------- */
+let creditMonth = todayStr().slice(0, 7);
+$('creditMonth').value = creditMonth;
+$('creditMonth').addEventListener('change', e => { creditMonth = e.target.value || creditMonth; loadCredit(); });
+
+async function loadCredit() {
+  $('crList').innerHTML = '<span class="muted">Đang tải...</span>';
+  try {
+    const [y, m] = creditMonth.split('-').map(Number);
+    const d = await api('credit', { year: y, month: m });
+    if (!d.found) {
+      $('crCycle').innerHTML = '<span class="err">Không thấy sheet tín dụng. Kiểm tra SHEET_CREDIT trong Api.gs.</span>';
+      $('crList').innerHTML = ''; return;
+    }
+    const left = n => n.daysLeft === 0 ? 'Hôm nay' : 'Còn ' + n.daysLeft + ' ngày';
+    const st = d.nextStatement, du = d.nextDue;
+    $('crSt').textContent = st ? fmtDMY(st.date) : (d.statementRaw || '–');
+    $('crStSub').textContent = st ? left(st) + ' · hằng tháng ngày ' + d.statementDay : 'Chưa đọc được trong sheet';
+    $('crDue').textContent = du ? fmtDMY(du.date) : (d.dueRaw || '–');
+    $('crDue').style.color = du && du.daysLeft <= 3 ? 'var(--danger)' : '';
+    $('crDueSub').textContent = du
+      ? left(du) + (d.dueOffsetDays != null ? ' · ' + d.dueOffsetDays + ' ngày sau ngày sao kê' : ' · hằng tháng ngày ' + d.dueDay)
+      : 'Chưa đọc được trong sheet';
+
+    $('crCycle').innerHTML = d.cycle
+      ? `<span class="label" style="margin-bottom:4px">Kỳ sao kê hiện tại · ${fmtDMY(d.cycle.from)} – ${fmtDMY(d.cycle.to)}</span>
+         <b style="font-size:24px;color:var(--chi)">${fmt(d.cycle.total)}đ</b> <span class="muted">· ${d.cycle.count} giao dịch</span>`
+      : '<span class="muted">Chưa xác định được ngày sao kê nên chưa tính kỳ hiện tại.</span>';
+
+    const head = `<div class="item"><b>Tổng chi tín dụng tháng ${m}/${y}</b><b class="amt" style="color:var(--chi)">${fmt(d.totalChi)}đ</b></div>`;
+    $('crList').innerHTML = head + (d.items.length ? d.items.map(it => `
+      <div class="item"><div><div>${esc(it.menu)}${it.sub ? ' · ' + esc(it.sub) : ''}</div>
+        <small>${fmtDM(it.date)}${it.note ? ' · ' + esc(it.note) : ''}</small></div>
+        <div class="amt" style="color:var(--${it.type === 'Thu' ? 'thu' : 'chi'})">${it.type === 'Thu' ? '+' : '-'}${fmt(it.money)}đ</div></div>`).join('')
+      : '<span class="muted">Tháng này chưa có giao dịch tín dụng.</span>');
+  } catch (err) {
+    $('crCycle').innerHTML = '<span class="err">Lỗi: ' + esc(err.message) + '</span>';
+    $('crList').innerHTML = '';
+  }
+}
+
+/* ---------- KHỞI ĐỘNG ---------- */
+function applyMeta(m) {
+  state.categories = m.categories || []; state.people = m.people || []; state.history = m.history || []; state.loaded = true;
+  fixSelection(); renderChoices();
+}
+
+async function init() {
+  syncType();
+  renderPending();
+  try {                                    // hiện ngay số dư đã nhớ nếu đúng tháng hiện tại
+    const b = JSON.parse(localStorage.getItem('bal_v1') || 'null');
+    if (b && b.y + '-' + pad2(b.m) === todayStr().slice(0, 7)) renderBalance(b);
+  } catch (e) {}
+  // Hiện ngay danh mục đã nhớ từ lần trước, rồi cập nhật ngầm
+  try {
+    const cached = JSON.parse(localStorage.getItem('meta_v3') || 'null');
+    if (cached) applyMeta(cached);
+  } catch (e) {}
+  syncQueue();   // gửi nốt các giao dịch còn chờ từ lần trước
+  try {
+    const m = await api('meta');
+    try { localStorage.setItem('meta_v3', JSON.stringify(m)); } catch (e) {}
+    applyMeta(m);
+  } catch (err) {
+    if (!state.loaded) $('menuBox').innerHTML = '<span class="err">Không tải được danh mục: ' + esc(err.message) + '</span>';
+  }
+}
+init();
+</script>
+</body>
+</html>
