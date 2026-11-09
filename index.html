@@ -56,6 +56,10 @@ section{margin-bottom:16px}
 .field{width:100%;height:52px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:0 16px;font-size:15px;outline:none}
 footer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
 footer .in{max-width:480px;margin:0 auto}
+footer .in.actions{display:flex;gap:10px}
+footer .actions .save{flex:1;width:auto}
+.cancel{flex:0 0 34%;height:56px;border:1px solid var(--line);border-radius:16px;background:var(--seg);color:var(--ink);font-size:16px;font-weight:700;cursor:pointer}
+
 .save{width:100%;height:56px;border:0;border-radius:16px;background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:700;cursor:pointer}
 .save:disabled{opacity:.6}
 .sum{display:flex;gap:12px;margin-bottom:16px}
@@ -146,7 +150,6 @@ footer .in{max-width:480px;margin:0 auto}
 <body>
 <div id="app">
   <header>
-    <button id="exitForm" class="exit-form hide" type="button" aria-label="Quay lại">‹ Quay lại</button>
     <h1>Sổ chi tiêu</h1>
   </header>
 
@@ -176,7 +179,7 @@ footer .in{max-width:480px;margin:0 auto}
 
     <section><span class="label">3. Nguồn tiền</span><div id="srcBox" class="row"></div></section>
     <section><span class="label">4. Danh mục</span><div id="menuBox"><span class="muted">Đang tải danh mục...</span></div></section>
-    <section><label class="label" for="subInput">5. Mục con (Menu C)</label><input id="subInput" class="field" type="text" autocomplete="off" placeholder="Nhập mục con nếu có"></section>
+    <section id="subSec" class="hide"><span class="label">5. Mục con (Menu C)</span><div id="subBox" class="row"></div></section>
     <section id="peopleSec" class="hide"><span class="label">6. Người liên quan (nếu có)</span><div id="peopleBox" class="row"></div></section>
     <section><label class="label" for="note">7. Ghi chú (nếu có)</label><input id="note" class="field" type="text" autocomplete="off"></section>
     <section class="card">
@@ -252,13 +255,13 @@ footer .in{max-width:480px;margin:0 auto}
   <div id="appVer" class="appver"></div>
 </div>
 
-<footer id="saveBar"><div class="in"><button id="saveBtn" class="save" type="button">Lưu giao dịch</button></div></footer>
+<footer id="saveBar" class="hide"><div class="in actions"><button id="cancelBtn" class="cancel" type="button">Hủy</button><button id="saveBtn" class="save" type="button">Lưu giao dịch</button></div></footer>
 <button id="fabAdd" class="fab-add" type="button" aria-label="Thêm giao dịch" title="Thêm giao dịch">+</button>
 <div id="toast" role="status"></div>
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v29';
+const APP_VERSION = 'v32';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -364,7 +367,11 @@ function renderChoices() {
     `<button type="button" class="tile ${v === state.menu ? 'on' : ''}" data-pick="menu" data-v="${esc(v)}"><i style="background:${DOTS[i % DOTS.length]}"></i>${esc(v)}</button>`).join('')}</div>`
     : '<span class="muted">Chọn nguồn tiền để xem danh mục</span>';
 
-  $('subInput').value = state.sub || '';
+  const definedSubs = categorySubs();
+  $('subSec').classList.toggle('hide', !definedSubs.length);
+  $('subBox').innerHTML = definedSubs.map(v =>
+    `<button type="button" class="chip ${same(v, state.sub) ? 'on' : ''}" data-pick="sub" data-v="${esc(v)}">${esc(v)}</button>`
+  ).join('');
 
   const showPeople = /vay|nợ/i.test(state.menu) && state.people.length;
   $('peopleSec').classList.toggle('hide', !showPeople);
@@ -387,9 +394,8 @@ document.addEventListener('keydown', e => {
   }
 });
 $('fabAdd').addEventListener('click', openEntryFromCurrentTab);
-$('exitForm').addEventListener('click', () => showTab(returnTabAfterSave || 'lookup'));
+$('cancelBtn').addEventListener('click', () => showTab(returnTabAfterSave || 'lookup'));
 
-$('subInput').addEventListener('input', e => { state.sub = e.target.value; });
 
 document.addEventListener('click', e => {
   const addForm = e.target.closest('[data-add-form]');
@@ -436,7 +442,6 @@ function showTab(name) {
   $('saveBar').classList.toggle('hide', name !== 'form');
   $('bottomTabs').classList.toggle('hide', name === 'form');
   $('fabAdd').classList.toggle('hide', name === 'form');
-  $('exitForm').classList.toggle('hide', name !== 'form');
   if (name === 'lookup') $('lookupDate').value = state.date;
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   if (name === 'lookup') loadDay();
