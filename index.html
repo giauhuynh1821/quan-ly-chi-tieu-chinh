@@ -217,7 +217,7 @@ footer .in{max-width:480px;margin:0 auto}
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v18';
+const APP_VERSION = 'v17';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -235,7 +235,7 @@ const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, SEP);
 const moneyNumber = v => {
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-  const n = Number(String(v ?? '').trim().replace(/[^\d-]/g, ''));
+  const n = Number(String(v ?? '').trim().replace(/[^\\d-]/g, ''));
   return Number.isFinite(n) ? n : 0;
 };
 const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
@@ -422,13 +422,7 @@ async function syncQueue() {
     if (savedAny && !getQ().length) {
       try { const m = await api('meta'); applyMeta(m); localStorage.setItem('meta_v3', JSON.stringify(m)); } catch (e) {}
     }
-    // Làm mới các tab đang mở và số dư sau khi máy chủ đã xác nhận giao dịch.
-    if (savedAny) {
-      toast('Đã đồng bộ giao dịch lên Google Sheets');
-      refreshActive();
-    } else if (!getQ().length) {
-      refreshActive();
-    }
+    refreshActive();
   }
 }
 
@@ -441,24 +435,8 @@ $('saveBtn').addEventListener('click', () => {
     sub: state.sub, note: $('note').value, person: state.person, money: state.amount,
   };
   const q = getQ(); q.push(item); setQ(q);          // lưu vào máy trước, không mất dù đóng app
-
-  // Cập nhật số dư ngay trên giao diện (optimistic UI) nếu giao dịch thuộc tháng hiện tại.
-  // Sau khi máy chủ lưu xong, refreshActive() sẽ lấy lại số liệu chuẩn từ Google Sheets.
-  try {
-    const currentMonth = todayStr().slice(0, 7);
-    if (item.date.slice(0, 7) === currentMonth) {
-      const cached = JSON.parse(localStorage.getItem('bal_v1') || 'null');
-      if (cached && cached.y + '-' + String(cached.m).padStart(2, '0') === currentMonth) {
-        if (String(item.type).toLowerCase() === 'thu') cached.thu = Number(cached.thu || 0) + Number(item.money);
-        else cached.chi = Number(cached.chi || 0) + Number(item.money);
-        localStorage.setItem('bal_v1', JSON.stringify(cached));
-        renderBalance(cached);
-      }
-    }
-  } catch (e) {}
-
   haptic('success');
-  toast('Đã ghi ' + fmt(item.money) + 'đ · đang đồng bộ');
+  toast('Đã ghi ' + fmt(item.money) + 'đ');
   setAmount(0); $('note').value = ''; state.menu = ''; state.sub = ''; state.person = ''; renderChoices();
   syncQueue();                                       // gửi lên sheet chạy ngầm
 });
@@ -512,7 +490,11 @@ async function loadMonth() {
     }).join('');
     const emptyNote = (d.totalChi === 0 && d.totalThu === 0)
       ? `<p class="cap" style="margin:6px 4px 10px">Chưa có giao dịch nào trong tháng ${d.month}/${d.year}.${latestNote(d.lastDate)}</p>` : '';
-    $('monthTable').innerHTML = emptyNote + `<table class="tbl"><thead><tr><th>Ngày</th><th class="r">Chi</th><th class="r">Thu</th></tr></thead>
+    const exNote = d.excludedCount
+      ? `<p class="cap" style="margin:6px 4px 10px">Không tính ${d.excludedCount} giao dịch ngoài báo cáo (tín dụng, rút tiết kiệm, thu hồi nợ…): chi ${fmt(d.excludedChi)}đ, thu ${fmt(d.excludedThu)}đ.</p>` : '';
+    const unNote = d.unmapped
+      ? `<p class="cap" style="margin:6px 4px 10px">${d.unmapped} giao dịch chưa khớp bảng Danh mục nên đang tính theo loại Thu/Chi.</p>` : '';
+    $('monthTable').innerHTML = emptyNote + exNote + unNote + `<table class="tbl"><thead><tr><th>Ngày</th><th class="r">Chi</th><th class="r">Thu</th></tr></thead>
       <tbody>${body}</tbody>
       <tfoot><tr class="total"><td>Tổng</td><td class="r c-chi">${fmt(d.totalChi)}</td><td class="r c-thu">${fmt(d.totalThu)}</td></tr></tfoot></table>`;
   } catch (err) {
@@ -529,14 +511,11 @@ function renderBalance(b) {
     `<div class="tc"><span class="in" title="Thu" aria-label="Thu ${fmt(b.thu)} đồng"><i aria-hidden="true">▲</i>${fmt(b.thu)}đ</span>` +
     `<span class="out" title="Chi" aria-label="Chi ${fmt(b.chi)} đồng"><i aria-hidden="true">▼</i>${fmt(b.chi)}đ</span></div>`;
 }
-let balanceRequestId = 0;
 async function loadBalance() {
-  const requestId = ++balanceRequestId;
   const [y, m] = todayStr().slice(0, 7).split('-').map(Number);
   try {
     const d = await api('month', { year: y, month: m });
-    if (requestId !== balanceRequestId) return;
-    const b = { y, m, chi: moneyNumber(d.totalChi), thu: moneyNumber(d.totalThu) };
+    const b = { y, m, chi: d.totalChi, thu: d.totalThu };
     try { localStorage.setItem('bal_v1', JSON.stringify(b)); } catch (e) {}
     renderBalance(b);
   } catch (err) { /* giữ số cũ nếu lỗi mạng */ }
@@ -608,9 +587,7 @@ function donutSvg(groups, total) {
     <text x="100" y="114" text-anchor="middle" font-size="${txt.length > 10 ? 13 : 16}" font-weight="700" fill="var(--ink)">${txt}</text></svg>`;
 }
 
-let chartRequestId = 0;
 async function loadChart() {
-  const requestId = ++chartRequestId;
   const r = chartRange();
   document.querySelectorAll('[data-pick="ctype"]').forEach(b => b.classList.toggle('on', b.dataset.v === chart.type));
   document.querySelectorAll('[data-pick="cperiod"]').forEach(b => b.classList.toggle('on', b.dataset.v === chart.period));
@@ -619,42 +596,17 @@ async function loadChart() {
   $('chartList').innerHTML = '';
   try {
     const d = await api('breakdown', { from: r.from, to: r.to, type: chart.type });
-    // Nếu người dùng đổi kỳ trong lúc API đang trả lời, bỏ qua phản hồi cũ.
-    if (requestId !== chartRequestId) return;
-
-    const total = moneyNumber(d.total);
-    if (!Array.isArray(d.groups)) throw new Error('API không trả về danh sách danh mục cho biểu đồ.');
-    let groups = d.groups.map(g => ({
-      name: String(g.name || '(trống)'),
-      total: moneyNumber(g.total),
-      count: moneyNumber(g.count)
-    })).filter(g => g.total > 0).sort((a, b) => b.total - a.total);
-
-    if (!(total > 0) || !groups.length) {
-      $('chartCard').innerHTML = '<span class="muted">Chưa có ' + (chart.type === 'thu' ? 'khoản thu' : 'khoản chi') + ' nào trong khoảng ' + r.from + ' đến ' + r.to + '.</span>';
-      return;
+    if (!d.total) { $('chartCard').innerHTML = '<span class="muted">Chưa có ' + (chart.type === 'thu' ? 'khoản thu' : 'khoản chi') + ' nào trong khoảng này.</span>'; return; }
+    let groups = d.groups;
+    if (groups.length > PALETTE.length) {                      // gộp phần đuôi thành "Khác"
+      const head = groups.slice(0, PALETTE.length - 1), tail = groups.slice(PALETTE.length - 1);
+      groups = head.concat([{ name: 'Khác (' + tail.length + ' mục)', total: tail.reduce((s, g) => s + g.total, 0), count: 0 }]);
     }
-
-    // Chuẩn hóa tổng theo chính các nhóm được API trả về để phần trăm và biểu đồ khớp nhau.
-    const chartTotal = groups.reduce((sum, g) => sum + g.total, 0);
-    if (!(chartTotal > 0)) throw new Error('Tổng tiền các danh mục bằng 0 hoặc không hợp lệ.');
-
-    if (groups.length > PALETTE.length) {
-      const head = groups.slice(0, PALETTE.length - 1);
-      const tail = groups.slice(PALETTE.length - 1);
-      groups = head.concat([{
-        name: 'Khác (' + tail.length + ' mục)',
-        total: tail.reduce((sum, g) => sum + g.total, 0),
-        count: tail.reduce((sum, g) => sum + g.count, 0)
-      }]);
-    }
-
-    $('chartCard').innerHTML = donutSvg(groups, chartTotal);
+    $('chartCard').innerHTML = donutSvg(groups, d.total);
     $('chartList').innerHTML = groups.map((g, i) =>
-      `<div class="lrow"><i class="ldot" style="background:${PALETTE[i % PALETTE.length]}"></i><span class="ln">${esc(g.name)}<small class="cap">${g.count} giao dịch</small></span><span class="lp">${Math.round(g.total / chartTotal * 100)}%</span><span class="la">${fmt(g.total)}đ</span></div>`).join('');
+      `<div class="lrow"><i class="ldot" style="background:${PALETTE[i % PALETTE.length]}"></i><span class="ln">${esc(g.name)}</span><span class="lp">${Math.round(g.total / d.total * 100)}%</span><span class="la">${fmt(g.total)}đ</span></div>`).join('');
   } catch (err) {
-    if (requestId !== chartRequestId) return;
-    $('chartCard').innerHTML = '<span class="err">Lỗi tải biểu đồ: ' + esc(err.message) + '</span>';
+    $('chartCard').innerHTML = '<span class="err">Lỗi: ' + esc(err.message) + '</span>';
   }
 }
 
