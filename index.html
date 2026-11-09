@@ -52,11 +52,16 @@ footer .in{max-width:480px;margin:0 auto}
 .save{width:100%;height:56px;border:0;border-radius:16px;background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:700;cursor:pointer}
 .save:disabled{opacity:.6}
 .sum{display:flex;gap:12px;margin-bottom:16px}
-.sum .card{flex:1;padding:14px 16px}
-.sum b{display:block;font-size:20px;margin-top:4px}
+.sum .card{flex:1;padding:10px 12px}
+.sum b{display:block;font-size:17px;margin-top:3px}
+.sum .mv b{font-size:18px;margin-top:0}
+.sum .mv{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sum.three .mv b{font-size:13px}
+.sum.three .card{padding:9px 10px}
+.sum.three b{font-size:13px;margin-top:3px;white-space:nowrap}
 .item{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
 .item:last-child{border-bottom:0}
-.item small{display:block;color:var(--muted);margin-top:2px;font-size:13px}
+.item small{display:block;color:var(--muted);margin-top:2px;font-size:11px;font-style:italic;line-height:1.35}
 .amt{font-weight:700;white-space:nowrap}
 .muted{color:var(--muted);font-size:14px}
 .err{color:var(--danger);font-size:14px}
@@ -78,13 +83,19 @@ footer .in{max-width:480px;margin:0 auto}
 .card.tight{padding:8px 14px}
 .seg.tabs{overflow:hidden}
 .seg.tabs button{flex:1 1 0;min-width:0;padding:0 2px;font-size:13px;white-space:nowrap}
+.tab-add{display:inline-flex;align-items:center;justify-content:center;margin-left:3px;width:17px;height:17px;border-radius:50%;background:var(--line);color:var(--ink);font-size:14px;font-weight:700;line-height:1;vertical-align:middle;cursor:pointer}
+.tab-add:active{transform:scale(.92)}
+.fab-add{position:fixed;right:max(18px,calc((100vw - 480px)/2 + 18px));bottom:calc(88px + env(safe-area-inset-bottom));z-index:20;width:54px;height:54px;border:0;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:32px;font-weight:500;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fab-add:active{transform:scale(.94)}
+.fab-add.hide{display:none}
 .seg.small button{height:36px;font-size:13px;border-radius:10px}
 .band{background:var(--card);border-radius:20px;padding:14px 18px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
-.band .bal{display:flex;align-items:baseline;gap:10px}
-.band .bl{font-size:14px;font-weight:500;color:var(--muted)}
-.band .bn{font-size:28px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.band .tc{display:flex;gap:22px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
-.band .tc i{font-style:normal;font-size:10px;margin-right:6px}
+.band .bal{display:flex;align-items:center;gap:8px}
+.band .bl{font-size:0;color:var(--muted)}
+.band .bn{font-size:29px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.band .tc{display:flex;gap:18px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.band .tc i{font-style:normal;font-size:15px;margin-right:5px}
+.band .bal .bl:before{content:'◈';font-size:21px}
 .band .in{color:var(--thu)}
 .band .out{color:var(--chi)}
 .sum.three b{font-size:15px}
@@ -92,7 +103,21 @@ footer .in{max-width:480px;margin:0 auto}
 .sum .mv{display:flex;align-items:baseline;gap:6px}
 .sum .mv i{font-style:normal;font-size:12px}
 .sum .mv b{font-size:22px;margin-top:0}
-#crSt,#crDue{font-size:18px}
+.sum:not(.three) .mv b{font-size:18px}
+#crSt,#crDue{font-size:16px}
+.credit-sub{font-size:10px;line-height:1.3;font-style:italic}
+.credit-cycle-label{display:block;font-size:11px;line-height:1.35;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px}
+.credit-cycle-dates{font-size:11px;line-height:1.4;color:var(--muted);margin-bottom:6px;font-style:italic}
+.credit-cycle-amount{font-size:18px!important}
+.excluded-note{margin:6px 4px 10px;font-size:11px;line-height:1.4;font-style:italic;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.excluded-count{color:#F59E0B}
+.excluded-count span{font-style:normal;margin-right:3px}
+.excluded-values{display:flex;align-items:center;gap:16px}
+.excluded-values i{font-style:normal;margin-right:4px}
+.excluded-out{color:var(--chi)}
+.excluded-in{color:var(--thu)}
+.credit-cycle-count{font-size:10px;font-style:italic}
+#subSec{display:none!important}
 .nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
 .nav button{width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--card);font-size:20px;cursor:pointer}
 .nav span{font-weight:600;font-size:15px}
@@ -115,15 +140,15 @@ footer .in{max-width:480px;margin:0 auto}
   <div id="pendingBar" class="pendingbar hide" role="status"></div>
 
   <div class="seg tabs" role="group" aria-label="Chuyển tab">
-    <button type="button" class="on" data-tab="form">Ghi chép</button>
-    <button type="button" data-tab="lookup">Tra cứu</button>
+    <button type="button" data-tab="form">Ghi chép</button>
+    <button type="button" class="on" data-tab="lookup">Tra cứu</button>
     <button type="button" data-tab="month">Tháng</button>
     <button type="button" data-tab="chart">Biểu đồ</button>
     <button type="button" data-tab="credit">Tín dụng</button>
   </div>
 
   <!-- TAB GHI CHÉP -->
-  <div id="view-form">
+  <div id="view-form" class="hide">
     <section>
       <label class="label" for="date">1. Ngày giao dịch</label>
       <input id="date" class="field" type="date" aria-label="Ngày giao dịch">
@@ -152,14 +177,14 @@ footer .in{max-width:480px;margin:0 auto}
   </div>
 
   <!-- TAB TRA CỨU -->
-  <div id="view-lookup" class="hide">
+  <div id="view-lookup">
     <section>
       <label class="label" for="lookupDate">Ngày tra cứu</label>
       <input id="lookupDate" class="field" type="date" aria-label="Ngày tra cứu">
     </section>
     <div class="sum">
-      <div class="card"><div class="mv" role="group" aria-label="Chi" style="color:var(--chi)"><i aria-hidden="true">▼</i><b id="sumChi">0đ</b></div><span class="cap" id="cntChi"></span></div>
-      <div class="card"><div class="mv" role="group" aria-label="Thu" style="color:var(--thu)"><i aria-hidden="true">▲</i><b id="sumThu">0đ</b></div><span class="cap" id="cntThu"></span></div>
+      <div class="card"><div class="mv" role="group" aria-label="Chi" style="color:var(--chi)"><i aria-hidden="true">↓</i><b id="sumChi">0đ</b></div><span class="cap" id="cntChi"></span></div>
+      <div class="card"><div class="mv" role="group" aria-label="Thu" style="color:var(--thu)"><i aria-hidden="true">↑</i><b id="sumThu">0đ</b></div><span class="cap" id="cntThu"></span></div>
     </div>
     <div class="card" id="dayList"><span class="muted">Đang tải...</span></div>
   </div>
@@ -168,9 +193,9 @@ footer .in{max-width:480px;margin:0 auto}
   <div id="view-month" class="hide">
     <div style="margin-bottom:12px"><input id="monthPick" class="pill" type="month" aria-label="Chọn tháng"></div>
     <div class="sum three">
-      <div class="card"><span class="label" style="margin:0">Chi</span><b id="sumMChi" style="color:var(--chi)">0đ</b></div>
-      <div class="card"><span class="label" style="margin:0">Thu</span><b id="sumMThu" style="color:var(--thu)">0đ</b></div>
-      <div class="card"><span class="label" style="margin:0">Còn lại</span><b id="sumMBal">0đ</b></div>
+      <div class="card"><div class="mv" style="color:var(--chi)"><i aria-hidden="true">▼</i><b id="sumMChi">0đ</b></div></div>
+      <div class="card"><div class="mv" style="color:var(--thu)"><i aria-hidden="true">▲</i><b id="sumMThu">0đ</b></div></div>
+      <div class="card"><div class="mv"><i aria-hidden="true">◈</i><b id="sumMBal">0đ</b></div></div>
     </div>
     <span class="label">Thu chi theo ngày · bấm một ngày để xem chi tiết</span>
     <div class="card tight" id="monthTable"><span class="muted">Đang tải...</span></div>
@@ -213,11 +238,12 @@ footer .in{max-width:480px;margin:0 auto}
 </div>
 
 <footer id="saveBar"><div class="in"><button id="saveBtn" class="save" type="button">Lưu giao dịch</button></div></footer>
+<button id="fabAdd" class="fab-add" type="button" aria-label="Thêm giao dịch" title="Thêm giao dịch">+</button>
 <div id="toast" role="status"></div>
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v17';
+const APP_VERSION = 'v25';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -235,7 +261,7 @@ const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, SEP);
 const moneyNumber = v => {
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-  const n = Number(String(v ?? '').trim().replace(/[^\\d-]/g, ''));
+  const n = Number(String(v ?? '').trim().replace(/[^\d-]/g, ''));
   return Number.isFinite(n) ? n : 0;
 };
 const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
@@ -347,7 +373,19 @@ function syncType() {
 }
 
 /* ---------- SỰ KIỆN ---------- */
+document.addEventListener('keydown', e => {
+  const addForm = e.target.closest && e.target.closest('[data-add-form]');
+  if (addForm && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    e.stopPropagation();
+    showTab('form');
+  }
+});
+$('fabAdd').addEventListener('click', openEntryFromCurrentTab);
+
 document.addEventListener('click', e => {
+  const addForm = e.target.closest('[data-add-form]');
+  if (addForm) { e.preventDefault(); e.stopPropagation(); showTab('form'); return; }
   const tab = e.target.closest('[data-tab]');
   if (tab) return showTab(tab.dataset.tab);
   const b = e.target.closest('[data-pick]');
@@ -373,9 +411,17 @@ $('date').value = state.date;
 $('lookupDate').value = state.date;
 $('lookupDate').addEventListener('change', e => { state.date = e.target.value || todayStr(); $('date').value = state.date; loadDay(); });
 
+let returnTabAfterSave = 'lookup';
+function openEntryFromCurrentTab() {
+  const current = ['lookup','month','chart','credit'].find(v => !$('view-' + v).classList.contains('hide')) || 'lookup';
+  returnTabAfterSave = current;
+  showTab('form');
+}
+
 function showTab(name) {
   ['form', 'lookup', 'month', 'chart', 'credit'].forEach(v => $('view-' + v).classList.toggle('hide', v !== name));
   $('saveBar').classList.toggle('hide', name !== 'form');
+  $('fabAdd').classList.toggle('hide', name === 'form');
   if (name === 'lookup') $('lookupDate').value = state.date;
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   if (name === 'lookup') loadDay();
@@ -438,6 +484,9 @@ $('saveBtn').addEventListener('click', () => {
   haptic('success');
   toast('Đã ghi ' + fmt(item.money) + 'đ');
   setAmount(0); $('note').value = ''; state.menu = ''; state.sub = ''; state.person = ''; renderChoices();
+  const returnTab = returnTabAfterSave || 'lookup';
+  returnTabAfterSave = 'lookup';
+  showTab(returnTab);                                // quay về tab đã mở form
   syncQueue();                                       // gửi lên sheet chạy ngầm
 });
 
@@ -491,7 +540,13 @@ async function loadMonth() {
     const emptyNote = (d.totalChi === 0 && d.totalThu === 0)
       ? `<p class="cap" style="margin:6px 4px 10px">Chưa có giao dịch nào trong tháng ${d.month}/${d.year}.${latestNote(d.lastDate)}</p>` : '';
     const exNote = d.excludedCount
-      ? `<p class="cap" style="margin:6px 4px 10px">Không tính ${d.excludedCount} giao dịch ngoài báo cáo (tín dụng, rút tiết kiệm, thu hồi nợ…): chi ${fmt(d.excludedChi)}đ, thu ${fmt(d.excludedThu)}đ.</p>` : '';
+      ? `<div class="excluded-note">
+          <div class="excluded-count"><span aria-hidden="true">ⓘ</span> ${d.excludedCount} giao dịch không báo cáo</div>
+          <div class="excluded-values">
+            <span class="excluded-out"><i aria-hidden="true">↓</i>${fmt(d.excludedChi)}đ</span>
+            <span class="excluded-in"><i aria-hidden="true">↑</i>${fmt(d.excludedThu)}đ</span>
+          </div>
+        </div>` : '';
     const unNote = d.unmapped
       ? `<p class="cap" style="margin:6px 4px 10px">${d.unmapped} giao dịch chưa khớp bảng Danh mục nên đang tính theo loại Thu/Chi.</p>` : '';
     $('monthTable').innerHTML = emptyNote + exNote + unNote + `<table class="tbl"><thead><tr><th>Ngày</th><th class="r">Chi</th><th class="r">Thu</th></tr></thead>
@@ -507,9 +562,9 @@ function renderBalance(b) {
   const bal = b.thu - b.chi;
   const el = $('balBand');
   el.classList.remove('hide');
-  el.innerHTML = `<div class="bal"><span class="bl">Còn lại</span><b class="bn">${bal < 0 ? '-' : ''}${fmt(Math.abs(bal))}đ</b></div>` +
-    `<div class="tc"><span class="in" title="Thu" aria-label="Thu ${fmt(b.thu)} đồng"><i aria-hidden="true">▲</i>${fmt(b.thu)}đ</span>` +
-    `<span class="out" title="Chi" aria-label="Chi ${fmt(b.chi)} đồng"><i aria-hidden="true">▼</i>${fmt(b.chi)}đ</span></div>`;
+  el.innerHTML = `<div class="bal"><span class="bl" aria-label="Còn lại"></span><b class="bn">${bal < 0 ? '-' : ''}${fmt(Math.abs(bal))}đ</b></div>` +
+    `<div class="tc"><span class="in" title="Thu" aria-label="Thu ${fmt(b.thu)} đồng"><i aria-hidden="true">↑</i>${fmt(b.thu)}đ</span>` +
+    `<span class="out" title="Chi" aria-label="Chi ${fmt(b.chi)} đồng"><i aria-hidden="true">↓</i>${fmt(b.chi)}đ</span></div>`;
 }
 async function loadBalance() {
   const [y, m] = todayStr().slice(0, 7).split('-').map(Number);
@@ -627,17 +682,17 @@ async function loadCredit() {
     const left = n => n.daysLeft === 0 ? 'Hôm nay' : 'Còn ' + n.daysLeft + ' ngày';
     const st = d.nextStatement, du = d.nextDue;
     $('crSt').textContent = st ? fmtDMY(st.date) : (d.statementRaw || '–');
-    $('crStSub').textContent = st ? left(st) + ' · hằng tháng ngày ' + d.statementDay : 'Chưa đọc được trong sheet';
+    $('crStSub').textContent = st ? left(st) : 'Chưa đọc được trong sheet';
+    $('crStSub').classList.add('credit-sub');
     $('crDue').textContent = du ? fmtDMY(du.date) : (d.dueRaw || '–');
     $('crDue').style.color = du && du.daysLeft <= 3 ? 'var(--danger)' : '';
-    $('crDueSub').textContent = du
-      ? left(du) + (d.dueOffsetDays != null ? ' · ' + d.dueOffsetDays + ' ngày sau ngày sao kê' : ' · hằng tháng ngày ' + d.dueDay)
-      : 'Chưa đọc được trong sheet';
+    $('crDueSub').textContent = du ? left(du) : 'Chưa đọc được trong sheet';
+    $('crDueSub').classList.add('credit-sub');
 
     $('crCycle').innerHTML = d.cycle
-      ? `<span class="label" style="margin-bottom:4px">Kỳ sao kê hiện tại · ${fmtDMY(d.cycle.from)} – ${fmtDMY(d.cycle.to)}</span>
-         <b style="font-size:24px;color:var(--chi)">${fmt(d.cycle.total)}đ</b> <span class="muted">· ${d.cycle.count} giao dịch</span>`
-      : '<span class="muted">Chưa xác định được ngày sao kê nên chưa tính kỳ hiện tại.</span>';
+      ? `<span class="credit-cycle-label">Kỳ sao kê</span><div class="credit-cycle-dates">${fmtDMY(d.cycle.from)} – ${fmtDMY(d.cycle.to)}</div>
+         <b class="credit-cycle-amount" style="color:var(--chi)">${fmt(d.cycle.total)}đ</b> <span class="muted credit-cycle-count">· ${d.cycle.count} giao dịch</span>`
+      : '<span class="muted credit-sub">Chưa xác định được ngày sao kê nên chưa tính kỳ hiện tại.</span>';
 
     const head = `<div class="item"><b>Tổng chi tín dụng tháng ${m}/${y}</b><b class="amt" style="color:var(--chi)">${fmt(d.totalChi)}đ</b></div>`;
     $('crList').innerHTML = head + (d.items.length ? d.items.map(it => `
