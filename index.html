@@ -24,15 +24,22 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:'Be Vietnam Pro',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
 button,input{font-family:inherit;color:inherit}
-#app{max-width:480px;margin:0 auto;padding:16px 16px 120px}
+#app{max-width:480px;margin:0 auto;padding:16px 16px calc(170px + env(safe-area-inset-bottom))}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 h1{margin:0;font-size:22px;font-weight:700}
+header .exit-form{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:600;cursor:pointer}
+header .exit-form.hide{display:none}
+
 .pill{height:36px;padding:0 14px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:500}
 input[type=date].pill,input[type=month].pill{width:auto}
 .seg{display:flex;padding:4px;background:var(--seg);border-radius:16px;gap:4px;margin-bottom:16px}
 .seg button{flex:1;height:44px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:15px;font-weight:600;cursor:pointer}
 .seg button.on{background:var(--accent);color:var(--on-accent)}
 .seg.tabs button.on,.seg.plain button.on{background:var(--card);color:var(--ink)}
+#bottomTabs{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(100%,480px);z-index:30;margin:0;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0;background:var(--seg);box-shadow:0 -5px 18px rgba(0,0,0,.22);gap:2px}
+#bottomTabs button{height:50px;min-width:0;padding:0 2px;font-size:clamp(10px,3.1vw,14px);white-space:nowrap}
+#bottomTabs.hide{display:none}
+
 section{margin-bottom:16px}
 .label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .card{background:var(--card);border-radius:20px;padding:18px 20px}
@@ -98,7 +105,14 @@ footer .in{max-width:480px;margin:0 auto}
 .band .bal .bl:before{content:'◈';font-size:21px}
 .band .in{color:var(--thu)}
 .band .out{color:var(--chi)}
-.sum.three b{font-size:15px}
+.sum.three b{font-size:15px}.sum.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;min-width:0}
+.sum.three .card{min-width:0;max-width:100%;overflow:hidden;padding:9px 6px}
+.sum.three .mv{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;white-space:nowrap}
+.sum.three .mv i{flex:0 0 auto;font-size:11px}
+.sum.three .mv b{display:inline-block;min-width:0;font-size:clamp(10px,2.8vw,13px)!important;letter-spacing:-.035em;white-space:nowrap}
+#view-month{min-width:0;overflow:hidden}
+#view-month .label{font-size:11px;line-height:1.35;letter-spacing:.02em;margin:2px 0 10px}
+
 .cap{display:block;font-size:11px;line-height:1.35;color:var(--muted);margin-top:2px}
 .sum .mv{display:flex;align-items:baseline;gap:6px}
 .sum .mv i{font-style:normal;font-size:12px}
@@ -132,6 +146,7 @@ footer .in{max-width:480px;margin:0 auto}
 <body>
 <div id="app">
   <header>
+    <button id="exitForm" class="exit-form hide" type="button" aria-label="Quay lại">‹ Quay lại</button>
     <h1>Sổ chi tiêu</h1>
   </header>
 
@@ -139,7 +154,7 @@ footer .in{max-width:480px;margin:0 auto}
 
   <div id="pendingBar" class="pendingbar hide" role="status"></div>
 
-  <div class="seg tabs" role="group" aria-label="Chuyển tab">
+  <div id="bottomTabs" class="seg tabs" role="group" aria-label="Chuyển tab">
     <button type="button" data-tab="form">Ghi chép</button>
     <button type="button" class="on" data-tab="lookup">Tra cứu</button>
     <button type="button" data-tab="month">Tháng</button>
@@ -161,7 +176,7 @@ footer .in{max-width:480px;margin:0 auto}
 
     <section><span class="label">3. Nguồn tiền</span><div id="srcBox" class="row"></div></section>
     <section><span class="label">4. Danh mục</span><div id="menuBox"><span class="muted">Đang tải danh mục...</span></div></section>
-    <section id="subSec" class="hide"><span class="label">5. Gợi ý mục con</span><div id="subBox" class="row"></div><span id="subHint" class="cap"></span></section>
+    <section><label class="label" for="subInput">5. Mục con (Menu C)</label><input id="subInput" class="field" type="text" autocomplete="off" placeholder="Nhập mục con nếu có"></section>
     <section id="peopleSec" class="hide"><span class="label">6. Người liên quan (nếu có)</span><div id="peopleBox" class="row"></div></section>
     <section><label class="label" for="note">7. Ghi chú (nếu có)</label><input id="note" class="field" type="text" autocomplete="off"></section>
     <section class="card">
@@ -197,7 +212,7 @@ footer .in{max-width:480px;margin:0 auto}
       <div class="card"><div class="mv" style="color:var(--thu)"><i aria-hidden="true">▲</i><b id="sumMThu">0đ</b></div></div>
       <div class="card"><div class="mv"><i aria-hidden="true">◈</i><b id="sumMBal">0đ</b></div></div>
     </div>
-    <span class="label">Thu chi theo ngày · bấm một ngày để xem chi tiết</span>
+    <span class="label">Thu chi theo ngày</span>
     <div class="card tight" id="monthTable"><span class="muted">Đang tải...</span></div>
   </div>
 
@@ -243,7 +258,7 @@ footer .in{max-width:480px;margin:0 auto}
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v25';
+const APP_VERSION = 'v29';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -349,17 +364,7 @@ function renderChoices() {
     `<button type="button" class="tile ${v === state.menu ? 'on' : ''}" data-pick="menu" data-v="${esc(v)}"><i style="background:${DOTS[i % DOTS.length]}"></i>${esc(v)}</button>`).join('')}</div>`
     : '<span class="muted">Chọn nguồn tiền để xem danh mục</span>';
 
-  const definedSubs = categorySubs();
-  const historicalSubs = historySubs();
-  const sb = uniq(definedSubs.concat(historicalSubs));
-  $('subSec').classList.toggle('hide', !sb.length);
-  $('subBox').innerHTML = sb.map(v => {
-    const fromHistory = historicalSubs.some(h => same(h, v)) && !definedSubs.some(d => same(d, v));
-    return `<button type="button" class="chip ${same(v, state.sub) ? 'on' : ''}" data-pick="sub" data-v="${esc(v)}">${esc(v)}${fromHistory ? ' ↺' : ''}</button>`;
-  }).join('');
-  $('subHint').textContent = historicalSubs.length
-    ? 'Gợi ý có cả mục con trong Danh mục và nội dung từng ghi trong DATA (↺).'
-    : (definedSubs.length ? 'Gợi ý lấy từ sheet Danh mục.' : '');
+  $('subInput').value = state.sub || '';
 
   const showPeople = /vay|nợ/i.test(state.menu) && state.people.length;
   $('peopleSec').classList.toggle('hide', !showPeople);
@@ -382,6 +387,9 @@ document.addEventListener('keydown', e => {
   }
 });
 $('fabAdd').addEventListener('click', openEntryFromCurrentTab);
+$('exitForm').addEventListener('click', () => showTab(returnTabAfterSave || 'lookup'));
+
+$('subInput').addEventListener('input', e => { state.sub = e.target.value; });
 
 document.addEventListener('click', e => {
   const addForm = e.target.closest('[data-add-form]');
@@ -419,9 +427,16 @@ function openEntryFromCurrentTab() {
 }
 
 function showTab(name) {
+  if (name === 'form' && !$('view-form').classList.contains('hide')) {
+    // Đang ở form thì giữ nguyên tab nguồn đã ghi nhớ.
+  } else if (name === 'form') {
+    returnTabAfterSave = ['lookup','month','chart','credit'].find(v => !$('view-' + v).classList.contains('hide')) || 'lookup';
+  }
   ['form', 'lookup', 'month', 'chart', 'credit'].forEach(v => $('view-' + v).classList.toggle('hide', v !== name));
   $('saveBar').classList.toggle('hide', name !== 'form');
+  $('bottomTabs').classList.toggle('hide', name === 'form');
   $('fabAdd').classList.toggle('hide', name === 'form');
+  $('exitForm').classList.toggle('hide', name !== 'form');
   if (name === 'lookup') $('lookupDate').value = state.date;
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   if (name === 'lookup') loadDay();
