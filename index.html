@@ -261,7 +261,7 @@ footer .actions .save{flex:1;width:auto}
 
 <script>
 /* ===== API_URL nằm trong file config.js (sửa một lần, không bị mất khi thay index.html) ===== */
-const APP_VERSION = 'v34';
+const APP_VERSION = 'v35';
 const API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 const SEP = '.';            // dấu phân cách hàng nghìn: '.' (khớp sheet) hoặc ','
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -283,7 +283,16 @@ const moneyNumber = v => {
   return Number.isFinite(n) ? n : 0;
 };
 const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
-const uniq = a => a.filter((v, i) => a.indexOf(v) === i);
+// Gộp các nhãn trùng nhau dù khác chữ hoa/thường hoặc dấu cách thừa.
+const uniq = a => {
+  const seen = new Set();
+  return a.filter(v => {
+    const key = String(v || '').normalize('NFC').trim().toLocaleLowerCase('vi');
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
 
 const state = {
   type: 'Chi', source: '', menu: '', sub: '', person: '', amount: 0, date: todayStr(),
